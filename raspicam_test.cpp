@@ -23,7 +23,7 @@ int main ( int argc,char **argv ) {
 	Mat image;
 
 	aruco::CameraParameters CamParam;
-	CamParam.readFromXMLFile("piCam2.yml");
+	CamParam.readFromXMLFile("piCam2.yml"); //must be in the build library, along the executable
 
 	//float MarkerSize = 0.069; //69mm
 	float MarkerSize = 0.127; //69mm
