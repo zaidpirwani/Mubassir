@@ -8,17 +8,18 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <raspicam/raspicam_cv.h>
 
-using namespace std; 
+using namespace std;
 using namespace cv;
 using namespace aruco;
 
-int main ( int argc,char **argv ) {	
+int main ( int argc,char **argv ) {
 	raspicam::RaspiCam_Cv Camera;
 	Camera.set ( CV_CAP_PROP_FORMAT, CV_8UC1 );
-	Camera.set ( CV_CAP_PROP_FRAME_WIDTH,  800 ); //1024
-	Camera.set ( CV_CAP_PROP_FRAME_HEIGHT, 600 ); //768
+	Camera.set ( CV_CAP_PROP_FRAME_WIDTH,  800 ); //for simplicity, camera watches 8 tile space in width
+	Camera.set ( CV_CAP_PROP_FRAME_HEIGHT, 600 ); //for simplicity, camera watches 6 tile space in height
+
 	cout<<"Opening Camera..."<<endl;
-	if (!Camera.open()) {cerr<<"Error opening the camera"<<endl;return -1;}
+	if (!Camera.open()) { cerr<<"Error opening the camera"<<endl; return -1; }
 
 	Mat image;
 
@@ -26,12 +27,12 @@ int main ( int argc,char **argv ) {
 	CamParam.readFromXMLFile("piCam2.yml"); //must be in the build library, along the executable
 
 	//float MarkerSize = 0.069; //69mm
-	float MarkerSize = 0.127; //69mm
+	float MarkerSize = 0.127; //127mm
 
 	MarkerDetector MDetector;
         MDetector.setThresholdParams(7, 7);
         MDetector.setThresholdParamRange(2, 0);
-//        MDetector.setDictionary("ARUCO_MIP_36h12",0.f);
+	//MDetector.setDictionary("ARUCO_MIP_36h12",0.f);
         MDetector.setDictionary("ARUCO",0.f);
 
 	while(1){
@@ -54,6 +55,7 @@ int main ( int argc,char **argv ) {
 		imshow("in",image);
 		waitKey(10);
 	}
+
 	cout<<"Stop camera..."<<endl;
 	Camera.release();
 	
