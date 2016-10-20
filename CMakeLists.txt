@@ -1,0 +1,17 @@
+#####################################
+cmake_minimum_required (VERSION 2.8) 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+SET(CMAKE_MODULE_PATH ${CMAKE_INSTALL_PREFIX}/lib/cmake/ )
+project (raspicam_test)
+find_package(raspicam REQUIRED)
+find_package(aruco REQUIRED )
+find_package(OpenCV)
+IF  ( OpenCV_FOUND AND raspicam_CV_FOUND)
+	MESSAGE(STATUS "COMPILING OPENCV TESTS")
+	add_executable (raspicam_test raspicam_test.cpp)  
+	target_link_libraries (raspicam_test  ${raspicam_CV_LIBS})
+	target_link_libraries (raspicam_test  ${aruco_LIBS})
+ELSE()
+	MESSAGE(FATAL_ERROR "OPENCV NOT FOUND IN YOUR SYSTEM")
+ENDIF()
+#####################################
