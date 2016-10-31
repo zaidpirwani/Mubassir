@@ -24,10 +24,10 @@ int main ( int argc,char **argv ) {
 	Mat image;
 
 	aruco::CameraParameters CamParam;
-	CamParam.readFromXMLFile("piCam2.yml"); //must be in the build library, along the executable
+	CamParam.readFromXMLFile("picam2.yml"); //must be in the build library, along the executable
 
 	//float MarkerSize = 0.069; //69mm
-	float MarkerSize = 0.127; //127mm
+	float MarkerSize = 0.101; //127mm
 
 	MarkerDetector MDetector;
         MDetector.setThresholdParams(7, 7);
