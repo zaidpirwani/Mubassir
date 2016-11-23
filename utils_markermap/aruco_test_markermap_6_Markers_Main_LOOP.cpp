@@ -36,9 +36,7 @@ using namespace cv;
 using namespace aruco;
 
 #define CornerMarkers 4
-#define RobotMarkers  2
-
-#define NumberOfMarkerMaps RobotMarkers+CornerMarkers
+#define NumberOfMarkerMaps 2+CornerMarkers
 
 
 #include <raspicam/raspicam_cv.h>
@@ -97,7 +95,7 @@ int main(int argc, char **argv) {
         CmdLineParser cml(argc,argv);
         if (argc < 3+1|| cml["-h"]) {
             cerr << "Invalid number of arguments" << endl;
-            cerr << "Usage: (in.avi|live) marksetconfig1.yml  marksetconfig2.yml  cornerMarker1.yml  cornerMarker2.yml  cornerMarker3.yml  cornerMarker4.yml  [optional_arguments] \n\t[-c camera_intrinsics.yml] \n\t[-s[n=1,2] marker_size] \n\t[-sC corner_marker_size] \n\t[-pcd[n=1,2] out_pcd_file_with_camera_poses] \n\t[-poses[n=1,2] out_file_with_poses] \n\t[-corner <corner_refinement_method> (0: LINES(default),1 SUBPIX) ][-h] \n\t[-cd[n=1,2] Corner_Distance_in_mm_1=Length_2=Width]" << endl;
+            cerr << "Usage: (in.avi|live) marksetconfig1.yml  marksetconfig2.yml  cornerMarker1.yml  cornerMarker2.yml  cornerMarker3.yml  cornerMarker4.yml  [optional_arguments] \n\t[-c camera_intrinsics.yml] \n\t[-s[n=1,2] marker_size] \n\t[-sC corner_marker_size] \n\t[-pcd[n=1,2] out_pcd_file_with_camera_poses] \n\t[-poses[n=1,2] out_file_with_poses] \n\t[-corner <corner_refinement_method> (0: LINES(default),1 SUBPIX) ][-h]" << endl;
             return false;
         }
 		int z=0;
@@ -168,65 +166,9 @@ int main(int argc, char **argv) {
 			TheMarkerDetector[z].getThresholdParams(ThresParam1, ThresParam2);
 		}
 
-	int i=0;
-	// Try to detect corner markers
-	Point2f corners[4] =
-	{
-	    Point2f(0,0),
-	    Point2f(0,0),
-	    Point2f(0,0),
-	    Point2f(0,0)
-	};
-	int fieldLength=0, fieldWidth=0;
-	//save the poses to a file in tum rgbd data format
-	if (cml["-cd1"] && cml["-cd2"]){
-		fieldLength = stoi(cml("-cd1","1"));
-		fieldWidth  = stoi(cml("-cd2","1"));
-	}else{
-		throw std::runtime_error("Error obtaining Corner Distance parameters");
-	}
-			
-	for(i=0; i<10; i++){
-		PiVideoCapturer.grab();
-		PiVideoCapturer.retrieve(TheInputImage);
-		TheInputImage.copyTo(TheInputImageCopy);
-		// Detection of the board
-		for(z=RobotMarkers; z<NumberOfMarkerMaps; z++){
-			vector<aruco::Marker> detected_markers=TheMarkerDetector[z].detect(TheInputImage);
-			//print the markers detected that belongs to the markerset
-			 for(auto idx:TheMarkerMapConfig[z].getIndices(detected_markers)){
-				 switch(detected_markers[idx].id){
-				 	case 134: corners[0] += detected_markers[idx].getCenter();break;
-				 	case 57: corners[1] += detected_markers[idx].getCenter();break;
-				 	case 127:corners[2] += detected_markers[idx].getCenter();break;
-				 	case 25:corners[3] += detected_markers[idx].getCenter();break;
-				 }
-			 }
-
-			 //detect 3d in	fo if possible
-			 if (TheMSPoseTracker[z].isValid()){
-				  if ( TheMSPoseTracker[z].estimatePose(detected_markers)){
-					 // aruco::CvDrawingUtils::draw3dAxis(TheInputImageCopy,  TheCameraParameters,TheMSPoseTracker[z].getRvec(),TheMSPoseTracker[z].getTvec(),TheMarkerMapConfig[z][0].getMarkerSize()*2);
-					 // frame_pose_map[z].insert(make_pair(index,TheMSPoseTracker[z].getRTMatrix() ));
-					 // cout<<"pose "<< z <<" rt="<<TheMSPoseTracker[z].getRvec()<<" "<<TheMSPoseTracker[z].getTvec()<<endl;
-				  }
-			}
-		}
-		// show input with augmented information and  the thresholded image
-		cv::imshow("in", TheInputImageCopy);
-		//cv::imshow("thres",TheMarkerDetector.getThresholdedImage());
-
-		cv::waitKey(10); // wait for key to be pressed
-	}
-	
-	for(z=0; z<4; z++)
-		cout<<"CORNER " << z+1 << " " << corners[z].x/10 << " " << corners[z].y/10 << endl;
-	cout << "Field Length= " << fieldLength << endl;
-	cout << "Field Width = " << fieldWidth << endl;
-
-
 
         // Create gui
+
         //cv::namedWindow("thres", 1);
         cv::namedWindow("in", 1);
 
@@ -243,7 +185,7 @@ int main(int argc, char **argv) {
             TheInputImage.copyTo(TheInputImageCopy);
             index++; // number of images captured
             // Detection of the board
-			for(z=0; z<RobotMarkers; z++){
+			for(z=0; z<NumberOfMarkerMaps; z++){
 				vector<aruco::Marker> detected_markers=TheMarkerDetector[z].detect(TheInputImage);
 				//print the markers detected that belongs to the markerset
 				 for(auto idx:TheMarkerMapConfig[z].getIndices(detected_markers))
@@ -268,7 +210,7 @@ int main(int argc, char **argv) {
 
 
 
-		for(z=0; z<(RobotMarkers); z++){
+		for(z=0; z<(NumberOfMarkerMaps-CornerMarkers); z++){
 			//save a beatiful pcd file (pcl library) showing the results (you can use pcl_viewer to see it)
 			if (cml["-pcd1"] || cml["-pcd2"]){
 				switch(z){
