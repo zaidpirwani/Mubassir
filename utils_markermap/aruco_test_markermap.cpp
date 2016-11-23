@@ -177,7 +177,9 @@ int main(int argc, char **argv) {
 	    Point2f(0,0),
 	    Point2f(0,0)
 	};
-	int fieldLength=0, fieldWidth=0;
+	int fieldLength=0, fieldWidth=0; // in mm
+	int pixelLength=0, pixelWidth=0; // in pix
+	float pix2mmX=0, pix2mmY=0;
 	//save the poses to a file in tum rgbd data format
 	if (cml["-cd1"] && cml["-cd2"]){
 		fieldLength = stoi(cml("-cd1","1"));
@@ -196,10 +198,10 @@ int main(int argc, char **argv) {
 			//print the markers detected that belongs to the markerset
 			 for(auto idx:TheMarkerMapConfig[z].getIndices(detected_markers)){
 				 switch(detected_markers[idx].id){
-				 	case 134: corners[0] += detected_markers[idx].getCenter();break;
+				 	case 134:corners[0] += detected_markers[idx].getCenter();break;
 				 	case 57: corners[1] += detected_markers[idx].getCenter();break;
 				 	case 127:corners[2] += detected_markers[idx].getCenter();break;
-				 	case 25:corners[3] += detected_markers[idx].getCenter();break;
+				 	case 25: corners[3] += detected_markers[idx].getCenter();break;
 				 }
 			 }
 
@@ -219,11 +221,26 @@ int main(int argc, char **argv) {
 		cv::waitKey(10); // wait for key to be pressed
 	}
 	
-	for(z=0; z<4; z++)
-		cout<<"CORNER " << z+1 << " " << corners[z].x/10 << " " << corners[z].y/10 << endl;
+	for(z=0; z<4; z++){
+		corners[z].x = corners[z].x/10;
+		corners[z].y = corners[z].y/10;
+		cout<<"CORNER " << z+1 << " " << corners[z].x << " " << corners[z].y << endl;
+	}
+	if(fieldLength!=0 && fieldWidth!=0){
+		pixelLength = corners[3].y - corners[0].y;
+		pixelWidth  = corners[2].x - corners [3].x;
+		pix2mmX   = (float)fieldWidth/pixelWidth;
+		pix2mmY   = (float)fieldLength/pixelLength;
+	}else{
+		throw std::runtime_error("Error in field size and pix2mm calculations");
+	}
+	
 	cout << "Field Length= " << fieldLength << endl;
 	cout << "Field Width = " << fieldWidth << endl;
-
+	cout << "Pixel Length= " << pixelLength << endl;
+	cout << "Pixel Width = " << pixelWidth << endl;
+	cout << "Pixel 2 mm X= " << pix2mmX << endl;
+	cout << "Pixel 2 mm Y= " << pix2mmY << endl;
 
 
         // Create gui
@@ -246,14 +263,16 @@ int main(int argc, char **argv) {
 			for(z=0; z<RobotMarkers; z++){
 				vector<aruco::Marker> detected_markers=TheMarkerDetector[z].detect(TheInputImage);
 				//print the markers detected that belongs to the markerset
-				 for(auto idx:TheMarkerMapConfig[z].getIndices(detected_markers))
-					 detected_markers[idx].draw(TheInputImageCopy, Scalar(0, 0, 255), 2);
+				 for(auto idx:TheMarkerMapConfig[z].getIndices(detected_markers)){
+					detected_markers[idx].draw(TheInputImageCopy, Scalar(0, 0, 255), 2);
+				 	cout << "ID = " << detected_markers[idx].id << " pixel(X,Y)="  << detected_markers[idx].getCenter().x << "," << detected_markers[idx].getCenter().y << " - Distance_in_mm(length,width):" << (detected_markers[idx].getCenter().x-corners[0].x)*pix2mmX << "," << (detected_markers[idx].getCenter().y-corners[0].y)*pix2mmY <<  endl;
+				 }
 				 //detect 3d info if possible
 				 if (TheMSPoseTracker[z].isValid()){
 					  if ( TheMSPoseTracker[z].estimatePose(detected_markers)){
 						 aruco::CvDrawingUtils::draw3dAxis(TheInputImageCopy,  TheCameraParameters,TheMSPoseTracker[z].getRvec(),TheMSPoseTracker[z].getTvec(),TheMarkerMapConfig[z][0].getMarkerSize()*2);
 						 frame_pose_map[z].insert(make_pair(index,TheMSPoseTracker[z].getRTMatrix() ));
-						 cout<<"pose "<< z <<" rt="<<TheMSPoseTracker[z].getRvec()<<" "<<TheMSPoseTracker[z].getTvec()<<endl;
+						 //cout<<"pose "<< z <<" rt="<<TheMSPoseTracker[z].getRvec()<<" "<<TheMSPoseTracker[z].getTvec()<<endl;
 					  }
 				}
 			}
